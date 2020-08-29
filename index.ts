@@ -1,28 +1,39 @@
 import * as http from 'http';
 import {IncomingMessage, ServerResponse} from 'http';
+import * as fs from 'fs';
+import * as p from 'path';
 
 const server = http.createServer();
-
+const publicDir = p.relative(__dirname, 'public');
 server.on('request', (request: IncomingMessage, response: ServerResponse) => {
-    console.log(request.method);
-    console.log(request.url);
-    console.log(request.headers);
-    const array = [];
-    request.on('data', (chunk: Buffer) => {
-        array.push(chunk);
-    });
-    request.on('end', () => {
-        const body = Buffer.concat(array).toString();
-        console.log('body');
-        console.log(body);
-        response.statusCode = 404;
-        response.setHeader('X-frank', `I'm Frank`);
-        response.write('1\n');
-        response.write('2\n');
-        response.write('3\n');
-        response.write('4\n');
-        response.end();
-    });
+
+
+    const {method, url, headers} = request;
+    switch (url) {
+        case '/index.html':
+            fs.readFile(p.resolve(publicDir, 'index.html'), (error, data) => {
+                if (error) throw error;
+                response.end(data.toString());
+            });
+            break;
+        case '/style.css':
+            response.setHeader('Content-Type', 'text/css;charset=utf-8');
+            fs.readFile(p.resolve(publicDir, 'style.css'), (error, data) => {
+                if (error) throw error;
+                response.end(data.toString());
+            });
+            break;
+        case '/main.js':
+            response.setHeader('Content-Type', 'text/javascript;charset=utf-8');
+            fs.readFile(p.resolve(publicDir, 'main.js'), (error, data) => {
+                if (error) throw error;
+                response.end(data.toString());
+            });
+            break;
+
+
+    }
+
 
 });
 server.listen(8888);
