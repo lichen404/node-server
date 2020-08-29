@@ -9,35 +9,33 @@ const publicDir = p.relative(__dirname, 'public');
 server.on('request', (request: IncomingMessage, response: ServerResponse) => {
 
 
-    const {method, url:path, headers} = request;
-    const  {pathname,search}= url.parse(path);
-    switch (pathname) {
-        case '/index.html':
-            fs.readFile(p.resolve(publicDir, 'index.html'), (error, data) => {
-                if (error) throw error;
-                response.end(data.toString());
-            });
-            break;
-        case '/style.css':
-            response.setHeader('Content-Type', 'text/css;charset=utf-8');
-            fs.readFile(p.resolve(publicDir, 'style.css'), (error, data) => {
-                if (error) throw error;
-                response.end(data.toString());
-            });
-            break;
-        case '/main.js':
-            response.setHeader('Content-Type', 'text/javascript;charset=utf-8');
-            fs.readFile(p.resolve(publicDir, 'main.js'), (error, data) => {
-                if (error) throw error;
-                response.end(data.toString());
-            });
-            break;
-        default:
-            response.statusCode =404
-            response.end()
-
-
+    const {method, url: path, headers} = request;
+    let {pathname, search} = url.parse(path);
+    if(pathname==='/'){
+        pathname='/index.html'
     }
+    const filename = pathname.substr(1);
+    fs.readFile(p.resolve(publicDir, filename), (error, data) => {
+        if (error) {
+            if (error.errno === -4058) {
+                response.statusCode = 404;
+                fs.readFile(p.resolve(publicDir, '404.html'), (error, data) => {
+                    response.end(data);
+                });
+
+            } else if(error.errno===-4068){
+                    response.statusCode=403;
+                    response.end('403 Forbidden')
+            } else {
+                response.statusCode = 500;
+                response.end('internal server error');
+            }
+
+        } else {
+            response.end(data);
+        }
+
+    });
 
 
 });
